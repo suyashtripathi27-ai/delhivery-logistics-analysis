@@ -1,0 +1,39 @@
+name: Logistics MLOps Pipeline
+
+# 1. The Trigger: Run this whenever a CSV is pushed into the 'data/raw' folder
+on:
+  push:
+    paths:
+      - 'data/raw/*.csv'
+
+# 2. The Job: What the server should do
+jobs:
+  process-data:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Allows the bot to save the clean file back to your repo
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Data Libraries
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas numpy
+
+      - name: Run Processing Engine
+        run: python scripts/pipeline_engine.py
+
+      - name: Save Clean Data to Processed Folder
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add data/processed/
+          git commit -m "🤖 Auto-processed raw data into Power BI ready format" || echo "No changes to commit"
+          git push
